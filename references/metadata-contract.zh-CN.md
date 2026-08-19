@@ -1,5 +1,9 @@
 # Retention Metadata Contract
 
+本版本将 quarantine 与永久删除分开：对象先进入 quarantined 状态，只有用户查看报告并
+明确同意后，独立的 destructive empty 阶段才能进入 permanently_removed；清空后必须记录
+直接 inventory 和同卷容量证据。
+
 ## Schema
 
 每个构建、发布副本、未引用镜像、BuildKit cache 或 archived session 关联一个 JSON
@@ -153,4 +157,3 @@ local backup: created -> checksum/restore_verified -> expired -> eligible_after_
 失败构建的可再生临时目录由构建流程的 `finally`/`always()` 立即清理；disk-clean
 负责遗留失败对象和 metadata 记录。其他历史对象只能由 disk-clean 的一次 apply 运行
 写入删除/回收结果；构建或归档流程不得自行删除历史对象并声称已完成 retention。
-
