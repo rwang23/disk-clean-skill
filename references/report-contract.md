@@ -33,21 +33,31 @@ objects, estimated_bytes, skipped items, and apply allowlist.
 
 The cleanup report must also contain candidates, quarantined, deleted, skipped, failed,
 estimated_bytes, quarantined_bytes, reclaimed_bytes, direct action-after readback, cleanup_status,
-cleanup_receipt, rollback, residual_risk, and proof state.
+cleanup_receipt, rollback, residual_risk, proof state, empty_confirmation_status,
+empty_started_at, pre_empty_quarantined_bytes, empty_action, empty_status,
+post_empty_quarantined_bytes, and permanently_reclaimed_bytes.
+
+For the initial post-quarantine report, set empty_confirmation_status to
+awaiting_user_confirmation when the target Trash/Recycle Bin is non-empty, set empty_status to
+pending, and set permanently_reclaimed_bytes to 0. Present the report before asking the user
+whether to empty it. A confirmed empty phase is a new run_id with a fresh destructive proof and
+its own action-after readback.
 
 The HTML page is a presentation layer and must not change the cleanup conclusion. It must include
 summary cards, capacity, categories, allowed roots, the complete candidate manifest, protected/
-skipped objects, the evidence chain, rollback notes, and the complete source text of both
-Markdown reports plus receipt/proof. Search and filtering may change visual display only; they
-must not remove or change underlying records.
+skipped objects, the evidence chain, rollback notes, quarantine/empty confirmation status,
+pre/post empty sizes, and the complete source text of both Markdown reports plus receipt/proof.
+Search and filtering may change visual display only; they must not remove or change underlying
+records.
 
 ## Evidence and accounting
 
 The report directory, report files, DecisionProof, and cleanup receipt are protected evidence,
 not candidates. Exclude the report currently being generated and historical reports in that
-directory from scanning. reclaimed_bytes may come only from direct post-cleanup capacity readback
-on the same volume. Logical size in the Windows Recycle Bin, Linux desktop Trash, macOS Trash, or
-same-volume quarantine counts only as quarantined_bytes.
+directory from scanning. reclaimed_bytes and permanently_reclaimed_bytes may come only from
+direct post-action capacity readback on the same volume. Logical size in the Windows Recycle Bin,
+Linux desktop Trash, macOS Trash, or same-volume quarantine counts only as quarantined_bytes until
+the user confirms the separate empty phase.
 
 Report paths, DecisionProof, and cleanup receipt must cross-reference one another. If cleanup
 report or HTML fails to write, do not mark the run SUCCEEDED; include reports, page, proof, and
