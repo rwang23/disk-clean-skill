@@ -56,6 +56,12 @@ release lock 正在使用时，清理批次必须 `SKIPPED`；只有同一 owner
 
 ## 每次运行的报告契约
 
+本版本的初始隔离报告如果 Trash/Recycle Bin 非空，必须记录
+empty_confirmation_status=awaiting_user_confirmation、empty_status=pending 和
+permanently_reclaimed_bytes=0；先呈现报告，再询问用户是否清空。用户明确同意后，清空
+必须使用新的 run_id 和独立的 destructive proof。清理报告还应记录清空前后大小、empty
+action、empty status、post-empty inventory 和永久释放空间。
+
 每次调用本 skill 都必须生成一份硬盘分析报告和一份清理报告；包括 dry-run、
 `NO_CHANGE`、`SKIPPED`、`PARTIAL` 和失败运行。报告使用 UTC `run_id` 命名，
 不得覆盖旧报告。输出目录由调用者通过 `report_dir` 或
@@ -212,6 +218,10 @@ metadata 优先使用目标对象旁边的 sidecar，避免 metadata 与对象�
 
 ### 5. Apply
 
+普通 apply 不清空 Trash/Recycle Bin。候选进入原生回收站或同卷 quarantine 后，先将
+quarantined bytes 和预计大小写入报告；只有用户查看报告并明确同意，才进入独立的
+destructive empty 阶段。
+
 只对用户已授权且规则完整的候选执行精确清理。Windows、Linux 和 macOS 默认优先使用
 平台原生 Trash/Recycle Bin；无桌面或无原生适配器时，使用同卷、带 manifest 的 quarantine。
 结果记为 `quarantined`；隔离区仍占用原磁盘空间，只有用户另行明确授权永久清空后才把它
@@ -234,7 +244,7 @@ metadata 优先使用目标对象旁边的 sidecar，避免 metadata 与对象�
 
 若平台适配器、隔离位置或恢复方式不明确，候选必须 `SKIPPED`，不能降级成直接删除。
 
-### 6. Verify, report and close
+### 6. Verify, report and ask
 
 在同一目标直接读回：候选路径是否消失、剩余候选数量/大小、磁盘可用空间、
 服务/容器/release identity 是否未变。记录 `deleted`、`skipped`、`failed`、实际
@@ -243,7 +253,16 @@ metadata 优先使用目标对象旁边的 sidecar，避免 metadata 与对象�
 读回就不能声称完成。网页必须展示摘要卡、容量、分类、允许根、完整候选 manifest、保护/跳过
 对象、证据链、回滚说明，并嵌入两份 Markdown 与 receipt/proof 的完整原文。清理报告或网页
 写入失败时运行至少记为 `PARTIAL`，不得记为 `SUCCEEDED`；所有报告、网页、proof 和路径
-必须写入 cleanup receipt。
+必须写入 cleanup receipt。报告写出后，Agent 才能询问用户是否永久清空调用者指定的
+Trash/Recycle Bin；用户拒绝或没有回答时保持 quarantine pending，不得清空。
+
+### 7. Optional permanent emptying
+
+只有用户在查看报告后明确同意，才可以用新的 run_id 和独立 P3 destructive proof
+重新读取指定 Trash/Recycle Bin 的对象数量、目标卷和清空前大小，再调用平台原生 empty
+适配器。必须直接读回清空后的 Trash/quarantine inventory、同卷容量和残余对象，并生成
+新的不覆盖报告和 HTML。无法证明精确范围时记为 SKIPPED；禁止在 Trash/Recycle Bin
+内部使用未核验的递归删除。
 
 ## Legacy fallback
 
