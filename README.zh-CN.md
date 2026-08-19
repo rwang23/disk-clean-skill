@@ -18,6 +18,8 @@ git clone https://github.com/rwang23/disk-clean-skill.git
 安装后的目录名称应为 disk-clean，并且根目录必须包含 SKILL.md。如果你的 agent 支持
 GitHub Skills，可以直接把这个仓库安装为 Skill。
 
+中文 Skill 说明仅供参考，不是运行入口：[references/SKILL.zh-CN.md](references/SKILL.zh-CN.md)。
+
 ## 直接交给 Agent 执行
 
 把下面这段复制给 agent，并替换其中的占位符：
