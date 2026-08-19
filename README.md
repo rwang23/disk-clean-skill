@@ -1,117 +1,66 @@
 # Disk Clean
 
-Safe, evidence-first retention cleanup for Windows, Linux, and macOS.
+Portable, evidence-first disk cleanup for Windows, Linux, and macOS.
 
-`disk-clean` is a high-permission cleanup skill for an assistant or automation
-host. It turns a user-authorized cleanup into a bounded, reviewable transaction:
-inventory, classify, dry-run, exact allowlist, before gate, quarantine/delete,
-action-after readback, and bilingual reporting.
+> Disclaimer: This is a high-permission cleanup skill. It does not guess paths or delete by
+> age alone. It requires explicit target boundaries, a dry-run, an exact allowlist, and
+> same-target action-after readback. Quarantine may still occupy disk space, and this tool is
+> not a backup or recovery plan.
 
-中文说明见 [README.zh-CN.md](README.zh-CN.md)。
+## Install
 
-## What it does
+Clone the repository, then register the folder with your agent's skill loader:
 
-- Finds only caller-supplied target roots; it never discovers a user's private
-  folders by guessing names, usernames, hosts, or projects.
-- Handles failed builds, terminal temporary artifacts, archived sessions,
-  verified old backups, cache, release artifacts, and optional post-deploy
-  container artifacts.
-- Preserves active work, current releases, recovery evidence, databases,
-  volumes, virtual disks, unknown paths, and incomplete metadata chains.
-- Uses a platform-native Trash/Recycle Bin or a same-volume quarantine before
-  permanent deletion whenever the platform adapter supports it.
-- Reports quarantined bytes separately from permanently reclaimed bytes.
+~~~bash
+git clone https://github.com/rwang23/disk-clean-skill.git
+~~~
+The folder must be installed as a skill named disk-clean and must contain the root file
+SKILL.md. If your agent supports GitHub Skills, install this repository directly as a Skill.
 
-## Platform boundary
+## Run it with an agent
 
-Every run must receive an explicit configuration object containing at least:
+Copy this prompt to your agent and replace the placeholders:
 
-```yaml
-platform: windows | linux | macos
-target_roots:
-  - <absolute-root-1>
-  - <absolute-root-2>
-report_dir: <absolute-report-directory>
-metadata_dir: <absolute-metadata-directory>
-actor: <configured-owner>
-quarantine: native-trash | same-volume-quarantine
-```
+~~~text
+Use the disk-clean skill. I explicitly authorize the cleanup workflow for exactly the platform and target roots below. Start with read-only inventory and a dry-run, show the exact allowlist, estimated bytes, protected objects, and skip reasons, and apply only after I confirm that allowlist. Do not guess paths and do not touch active work, current releases, databases, backups, volumes, virtual disks, user profiles, or unknown objects. Use the platform quarantine/recycle adapter, perform same-target action-after readback, and generate the English and Chinese Markdown reports plus the self-contained HTML report. Platform: <windows|linux|macos>. Target roots: <absolute paths>. Report directory: <absolute path>. Metadata directory: <absolute path>. Actor: <configured owner>. Quarantine: <native-trash|same-volume-quarantine>.
+~~~
 
-The package does not assume a fixed home directory, drive letter, temporary
-folder, session archive, project, cloud host, container socket, or username.
-Platform conventions such as `%TEMP%`, `$TMPDIR`, and `$XDG_CACHE_HOME` may be
-used only when the caller resolves them into an explicit allowlist before the
-run.
+## What it produces
 
-## Retention rules
+Every run writes non-overwriting artifacts under the caller-provided report directory:
 
-The default policy is deliberately conservative:
-
-- failed builds: terminal metadata and `delete_after=terminal_at`;
-- terminal temporary artifacts: complete owner/task/terminal metadata and an
-  expired `delete_after`;
-- archived sessions: `state=archived`, matching owner/session identity, and
-  `delete_after=archived_at+14d`;
-- previous/archive/history release artifacts: five days after the recorded
-  release state time;
-- unreferenced build images and cache: three days after creation or last use;
-- local backups: only older, expired, restore-verified nodes outside the
-  latest/rollback/protected chain;
-- missing, malformed, or contradictory metadata: `legacy_unknown`, report only.
-
-Names and directory age do not override missing evidence. The optional legacy
-session fallback is allowed only for an explicitly supplied archive root whose
-embedded `session_meta` is internally consistent and independently proven old.
-
-## Reports
-
-Each run, including dry-run, `NO_CHANGE`, `SKIPPED`, `PARTIAL`, and failure,
-produces the following non-overwriting artifacts under the caller's
-`report_dir`:
-
-```text
+~~~text
 disk-analysis-<run_id>.en.md
 disk-analysis-<run_id>.zh-CN.md
 disk-cleanup-<run_id>.en.md
 disk-cleanup-<run_id>.zh-CN.md
 disk-clean-report-<run_id>.html
-```
+~~~
 
-The HTML report defaults to English and has an in-page Chinese toggle. It is
-self-contained, uses no CDN or external font, supports manifest search/filter
-and printing, and embeds the complete Markdown/JSON source so the visual layer
-cannot replace or truncate audit evidence.
+The HTML report defaults to English, switches to Chinese in-page, and preserves the complete
+manifest and source evidence. The full policy is in [SKILL.md](SKILL.md); Chinese guidance is in
+[README.zh-CN.md](README.zh-CN.md).
 
-## Safety gates
+## Safety boundary
 
-The skill must stop with `SKIPPED` when identity, owner, target boundary,
-metadata, active references, locks, platform quarantine, recovery evidence, or
-the decisive report surface is unclear. It must not use global prune commands,
-wildcard deletion, recursive deletion of an unresolved root, direct runtime
-data-root deletion, or an estimated byte count as proof of reclaimed space.
+The skill may classify failed builds, terminal temporary artifacts, expired archived sessions,
+verified old backups, caches, and approved release artifacts. It keeps active work, current
+releases, recovery evidence, databases, volumes, virtual disks, user profiles, and uncertain
+objects untouched. Permanent deletion is not a substitute for a backup or restore test.
 
-`SUCCEEDED` requires same-target action-after readback. A quarantine still
-occupies disk space; `reclaimed_bytes` is valid only after direct capacity
-readback shows the space was actually returned to the volume.
+## Report preview
 
-## Optional post-deploy cleanup
+These public-safe previews show the report through the Classification section. Candidate paths,
+session details, backup details, and later evidence sections are intentionally omitted.
 
-Container image cleanup is an optional adapter. The release owner must provide
-the project/runtime allowlist, exact revision and digest evidence, current and
-rollback protection, an immutable recovery reference, and the release lock.
-The adapter uses exact image IDs and official runtime APIs; it never substitutes
-global image/system/volume prune or direct deletion under runtime data roots.
+![English report preview](assets/report-overview-en.png)
 
-## Development and validation
+![Chinese report preview](assets/report-overview-zh-CN.png)
+
+## Validation
 
 From the skill directory:
 
-```text
-python -m py_compile scripts/render_report_html.py
-python <skill-system-tools>/quick_validate.py .
-python <skill-tools>/skill-eval-runner.py --root <skill-root> --target disk-clean audit
-```
-
-The HTML renderer is standard-library-only and refuses to overwrite an existing
-report. Publishing, installing a helper, changing a runtime scope, or enabling
-a new host is outside this package and requires a separate review and approval.
+~~~text
+python -c "import ast, pathlib; ast.parse(pathlib.Path('scripts/render_report_html.py').read_text())"
+~~~
