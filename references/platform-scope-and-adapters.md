@@ -31,3 +31,23 @@ an unexpanded or unchecked glob, root, or entire Temp. Never delete active sessi
 databases, Docker volumes, VHDX, or unknown releases; never stop services or restart the host
 or containers to release space; never expand to a sibling directory after a failed candidate.
 If the adapter, isolation location, or recovery method is unclear, mark the candidate SKIPPED.
+
+## Post-report permanent emptying
+
+Do not empty a native Trash/Recycle Bin during the normal apply phase. After the analysis,
+cleanup, and HTML reports are written, ask the user whether to permanently empty the exact
+caller-specified trash scope. An affirmative answer starts a new run_id and a separate P3
+destructive proof; silence or a negative answer leaves the quarantine intact.
+
+Use only an adapter that proves the exact target scope:
+
+| Platform | Native empty adapter | Direct post-empty evidence |
+| --- | --- | --- |
+| Windows | Recycle Bin API or Clear-Recycle-Bin -DriveLetter <letter> -Force for the named drive | target-drive Recycle Bin inventory and same-volume capacity readback |
+| Linux | caller-supplied desktop Trash API for the named scope; exact same-volume quarantine manifest when headless | target Trash/quarantine inventory and same-volume capacity readback |
+| macOS | caller-supplied native Trash/Finder API for the named scope; exact same-volume quarantine manifest without UI | target Trash/quarantine inventory and same-volume capacity readback |
+
+Never use rm -rf, Remove-Item -Recurse, or an equivalent unchecked recursive delete inside a
+Trash/Recycle Bin. If the adapter cannot prove exact scope, mark the empty phase SKIPPED and
+preserve the quarantine. Count logical quarantine size as quarantined_bytes before emptying;
+count permanently_reclaimed_bytes only from direct post-empty capacity readback.
