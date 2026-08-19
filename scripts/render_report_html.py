@@ -303,14 +303,18 @@ JS = r"""
 
 def build_html(
     analysis_path: Path,
+    analysis_zh_path: Path | None,
     cleanup_path: Path | None,
+    cleanup_zh_path: Path | None,
     receipt_path: Path | None,
     proof_path: Path | None,
     platform: str | None,
     target_label: str | None,
 ) -> str:
     analysis_text = read_text(analysis_path)
+    analysis_zh_text = read_text(analysis_zh_path) if analysis_zh_path and analysis_zh_path.exists() else ""
     cleanup_text = read_text(cleanup_path) if cleanup_path and cleanup_path.exists() else ""
+    cleanup_zh_text = read_text(cleanup_zh_path) if cleanup_zh_path and cleanup_zh_path.exists() else ""
     analysis_meta = parse_meta(analysis_text)
     cleanup_meta = parse_meta(cleanup_text)
     meta = {**analysis_meta, **cleanup_meta}
@@ -405,7 +409,9 @@ def build_html(
     evidence_items: list[str] = []
     for label_en, label_zh, path in (
         ("Analysis report", "分析报告", analysis_path),
+        ("Analysis report · Chinese", "分析报告 · 中文", analysis_zh_path),
         ("Cleanup report", "清理报告", cleanup_path),
+        ("Cleanup report · Chinese", "清理报告 · 中文", cleanup_zh_path),
         ("Cleanup receipt", "清理回执", receipt_path),
         ("DecisionProof", "DecisionProof", proof_path),
     ):
@@ -442,8 +448,12 @@ def build_html(
         '<section class="section">', heading("06 / PROVE", "evidence", "Evidence chain", "证据链", "Reports, receipt, and DecisionProof cross-reference the same run.", "报告、回执和 DecisionProof 互相引用同一次运行。"), f'<div class="grid two-grid"><article class="card"><ul class="evidence-list">{"".join(evidence_items)}</ul></article><article class="card"><ul class="evidence-list"><li><span>{pair("Policy", "策略")}</span><code>{escape(policy)}</code></li><li><span>{pair("Observed", "观察时间")}</span><code>{escape(observed)}</code></li><li><span>{pair("Manifest SHA-256", "Manifest SHA-256")}</span><code>{escape(manifest_hash or "not recorded")}</code></li><li><span>{pair("Target", "目标")}</span><code>{escape(target)}</code></li></ul></article></div></section>',
         '<section class="section">', heading("07 / SOURCE", "source", "Original audit source", "原始审计全文", "The complete source text remains embedded so the presentation layer cannot truncate fields or paths.", "完整原始文本嵌入网页，呈现层不会截断字段或路径。"), f'<details open><summary>{pair("Analysis report · complete source", "分析报告 · 完整原文")}</summary><div class="raw-box"><pre>{escape(analysis_text)}</pre></div></details>',
     ]
+    if analysis_zh_text:
+        parts.append(f'<details open><summary>{pair("Analysis report · Chinese complete source", "分析报告 · 中文完整原文")}</summary><div class="raw-box"><pre>{escape(analysis_zh_text)}</pre></div></details>')
     if cleanup_text:
         parts.append(f'<details open><summary>{pair("Cleanup report · complete source", "清理报告 · 完整原文")}</summary><div class="raw-box"><pre>{escape(cleanup_text)}</pre></div></details>')
+    if cleanup_zh_text:
+        parts.append(f'<details open><summary>{pair("Cleanup report · Chinese complete source", "清理报告 · 中文完整原文")}</summary><div class="raw-box"><pre>{escape(cleanup_zh_text)}</pre></div></details>')
     if receipt_json:
         parts.append(f'<details><summary>{pair("Cleanup receipt JSON", "清理回执 JSON")}</summary><div class="raw-box"><pre>{escape(receipt_json)}</pre></div></details>')
     if proof_json:
@@ -458,7 +468,9 @@ def build_html(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--analysis", required=True, type=Path)
+    parser.add_argument("--analysis-zh", type=Path)
     parser.add_argument("--cleanup", type=Path)
+    parser.add_argument("--cleanup-zh", type=Path)
     parser.add_argument("--receipt", type=Path)
     parser.add_argument("--proof", type=Path)
     parser.add_argument("--platform", type=str)
@@ -471,7 +483,7 @@ def main() -> int:
         raise SystemExit(f"Analysis report not found: {args.analysis}")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
-        build_html(args.analysis, args.cleanup, args.receipt, args.proof, args.platform, args.target_label),
+        build_html(args.analysis, args.analysis_zh, args.cleanup, args.cleanup_zh, args.receipt, args.proof, args.platform, args.target_label),
         encoding="utf-8",
         newline="\n",
     )
