@@ -44,6 +44,9 @@ project and release readback succeeds.
 - Use a separate DecisionProof P3 for each independent platform and target root.
 - Prefer native Trash/Recycle Bin or same-volume quarantine with a manifest. Count quarantine
   only as quarantined bytes until the user separately authorizes permanent emptying.
+- Never empty a native Trash/Recycle Bin automatically or as an implicit part of apply. Finish
+  the cleanup report first, show the quarantine estimate, and ask the user in the conversation.
+  Permanent emptying is a separate destructive phase requiring a fresh affirmative answer.
 - Never stop services, restart the host, restart containers, use global production prune, or
   manually remove containerd, BuildKit, overlayfs, or Docker data directories.
 - If identity, ownership, lock, runtime, recovery, category, adapter, or report state is unclear,
@@ -56,8 +59,11 @@ the English and Chinese analysis/cleanup Markdown reports and the self-contained
 described in the
 [report contract](references/report-contract.md). Use one UTC run_id and never overwrite an
 older report. Write the analysis report successfully before apply; write the cleanup report
-after direct action-after readback; render the HTML after the final known state. A report or
-renderer failure prevents SUCCEEDED and must be recorded in the cleanup receipt.
+after direct action-after readback of the quarantine phase; render the HTML after the final known
+state. A report or renderer failure prevents SUCCEEDED and must be recorded in the cleanup
+receipt. If quarantine contains items, set the initial report to
+empty_confirmation_status=awaiting_user_confirmation and permanently_reclaimed_bytes=0, then
+ask whether the user wants to empty the specified Trash/Recycle Bin.
 
 ## Execution gates
 
@@ -103,14 +109,27 @@ Act only on the confirmed allowlist with complete evidence. Use the platform ada
 isolation or same-volume quarantine as quarantined; permit permanent deletion only when no
 adapter exists, the policy is fully satisfied, and the user explicitly authorizes it.
 
-### 5. Verify, report, and close
+### 5. Verify, report, and ask
 
 Read back from the same target: source-path disappearance, quarantine/original-location
 matching, remaining candidates, capacity, and unchanged service/container/release identity.
-Record actions, skips, failures, actual reclaimed bytes, rollback, residual risk, and proof
-state. Write both language reports, render the HTML with
+Record actions, skips, failures, quarantined bytes, permanently reclaimed bytes (zero before
+empty confirmation), rollback, residual risk, and proof state. Write both language reports,
+render the HTML with
 [scripts/render_report_html.py](scripts/render_report_html.py), and close the P3 proof. Without
-action-after readback, do not claim completion.
+action-after readback, do not claim completion. Only after these reports are available, ask the
+user whether to permanently empty the caller-specified Trash/Recycle Bin. If the user declines
+or does not answer, finish with quarantine pending and do not empty it.
+
+### 6. Optional permanent emptying
+
+If and only if the user gives an affirmative answer after reviewing the reports, start a new
+run_id and a separate P3 destructive proof for the exact caller-specified Trash/Recycle Bin or
+same-volume quarantine. Re-read its item inventory, target volume, and pre-empty size before
+calling the platform-native empty adapter. Record the empty action, direct post-empty inventory,
+post-empty capacity, permanently reclaimed bytes, and any residual items. If the adapter cannot
+prove exact scope, mark the phase SKIPPED; never use an unchecked recursive delete inside a
+Trash/Recycle Bin. The empty phase must produce its own non-overwriting reports and HTML page.
 
 ## Success standard
 
