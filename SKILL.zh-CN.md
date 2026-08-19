@@ -14,8 +14,8 @@ runner，也不把删除动作交给 n8n；助手在用户明确说“清理”�
 构建和归档系统只负责写入 retention metadata。调用者必须传入平台、目标根、
 报告目录、metadata 目录、执行身份和可用的隔离/回收适配器；skill 不从用户机器
 猜测路径、用户名、主机名或项目名。详细 metadata 约定见
-[references/metadata-contract.md](references/metadata-contract.md)；部署成功后的项目镜像
-收敛契约见 [references/post-deploy-contract.md](references/post-deploy-contract.md)。
+[references/metadata-contract.zh-CN.md](references/metadata-contract.zh-CN.md)；部署成功后的项目镜像
+收敛契约见 [references/post-deploy-contract.zh-CN.md](references/post-deploy-contract.zh-CN.md)。
 
 自动维护只做 owner-scoped、idle-only 的官方容器运行时操作和精确 job 工作区回收；
 发布事务自己的 post-deploy finalizer 才能在同一项目、同一 release readback 成功后
@@ -331,4 +331,3 @@ action-after 直接读回、`cleanup_status`、`cleanup_receipt`、rollback 和 
 
 本 skill 的成功标准是“按规则安全完成并验证”，不是“尽可能多删”。空间压力大时
 也必须先扩大可证明范围，不能降低保护边界。
-
