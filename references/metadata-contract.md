@@ -141,7 +141,8 @@ object is moved, renamed, or released, update metadata before allowing cleanup t
     release: current -> previous -> eligible_after_5d -> deleted
     image/cache: created -> unreferenced -> eligible_after_3d -> pruned
     release image: current -> previous/rollback -> eligible_after_5d -> post_deploy_cleanup -> pruned
-    temporary artifact: running -> terminal -> eligible_after_delete_after -> quarantined/deleted
+    temporary artifact: running -> terminal -> eligible_after_delete_after -> quarantined
+      -> permanent_empty_authorized -> permanently_removed
     session: active -> archived -> eligible_after_14d -> deleted
     local backup: created -> checksum/restore_verified -> expired -> eligible_after_delete_after -> deleted
 
@@ -149,3 +150,7 @@ The build workflow cleans a failed build's regenerable temporary directory in fi
 disk-clean handles leftover failed objects and metadata. Other historical objects may be deleted or
 recycled only by one disk-clean apply run, which records the result. Build or archive workflows
 must not delete historical objects independently and claim that retention is complete.
+
+Quarantine is not permanent deletion. A native Trash/Recycle Bin or same-volume quarantine may
+be emptied only in a separate run after the user reviews the reports and gives an affirmative
+answer; the empty action must record direct post-empty inventory and capacity evidence.
