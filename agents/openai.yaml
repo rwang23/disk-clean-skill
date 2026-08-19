@@ -1,0 +1,4 @@
+interface:
+  display_name: "Disk Clean"
+  short_description: "Safe Windows/Linux/macOS retention cleanup"
+  default_prompt: "Use $disk-clean with explicit platform, target roots, metadata, report, owner, and quarantine boundaries; write English and Chinese audit reports, safely clean expired failed builds, terminal artifacts, archived sessions, verified old backups, approved caches, and project-scoped post-deploy artifacts; finish with action-after readback and a self-contained Apple-style HTML report that defaults to English and preserves the full manifest and evidence."
