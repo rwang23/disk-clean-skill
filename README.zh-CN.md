@@ -2,6 +2,8 @@
 
 适用于 Windows、Linux 和 macOS 的便携式、证据优先磁盘清理 skill。
 
+[英文](README.md)
+
 > 免责声明：这是一个高权限清理 skill。它不会猜测路径，也不会仅按文件年龄删除对象。
 > 每次运行都需要明确目标边界、dry-run、精确白名单和同一目标的 action-after 直接读回。
 > 隔离区仍可能占用磁盘空间；本工具不是备份方案，也不是恢复方案。
@@ -24,21 +26,6 @@ GitHub Skills，可以直接把这个仓库安装为 Skill。
 请使用 disk-clean skill。我明确授权你只针对下面指定的平台和目标根执行清理流程。先做只读盘点和 dry-run，展示精确白名单、预计字节数、保护对象和跳过原因；只有我确认该白名单后才 apply。不要猜测路径，也不要处理活动任务、当前发布、数据库、备份、volume、虚拟磁盘、用户资料或未知对象。使用平台隔离/回收站适配器，完成同一目标的 action-after 直接读回，并生成英文和中文 Markdown 报告以及自包含 HTML 报告。平台：<windows|linux|macos>。目标根：<绝对路径列表>。报告目录：<绝对路径>。Metadata 目录：<绝对路径>。执行身份：<配置的 owner>。隔离方式：<native-trash|same-volume-quarantine>。
 ~~~
 
-## 输出什么
-
-每次运行都会在调用者提供的报告目录下生成不覆盖历史的文件：
-
-~~~text
-disk-analysis-<run_id>.en.md
-disk-analysis-<run_id>.zh-CN.md
-disk-cleanup-<run_id>.en.md
-disk-cleanup-<run_id>.zh-CN.md
-disk-clean-report-<run_id>.html
-~~~
-
-HTML 默认显示英文，可在页面内切换中文，并保留完整 manifest 和原始证据。完整规则见
-[SKILL.zh-CN.md](SKILL.zh-CN.md)，英文说明见 [README.md](README.md)。
-
 ## 安全边界
 
 Skill 可以分类失败构建、终态临时产物、过期归档 session、已验证旧备份、缓存和获准的
@@ -47,10 +34,8 @@ Skill 可以分类失败构建、终态临时产物、过期归档 session、已
 
 ## 报告预览
 
-下面是截至“清理分类”部分的公开安全预览。候选路径、session 详情、备份详情和后续证据
-部分涉及敏感信息，因此没有放入截图。
-
-![英文报告预览](assets/report-overview-en.png)
+下面是截至“清理分类”部分的中文公开安全预览。候选路径、session 详情、备份详情和后续
+证据部分涉及敏感信息，因此没有放入截图。
 
 ![中文报告预览](assets/report-overview-zh-CN.png)
 
